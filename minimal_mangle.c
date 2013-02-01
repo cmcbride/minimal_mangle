@@ -1,12 +1,12 @@
-/* uber-simplified C-only code utilities to use mangle polygons
+/* simplified C-only code utilities to minimally use mangle polygons
  *
  * Cameron McBride
  * cameron.mcbride AT gmail.com
  * January 2013
  */
 #pragma once
-#ifndef MANGLELIB_INCLUDED
-#define MANGLELIB_INCLUDED
+#ifndef MINIMAL_MANGLE_INCLUDED
+#define MINIMAL_MANGLE_INCLUDED
 
 /*
  * Some description:
@@ -43,21 +43,21 @@ typedef int SINT;               /* SINT = signed integer */
 
 typedef struct {
     double x[3];
-} VEC3;
+} MANGLE_VEC;
 
 typedef struct {
     double x[3];
     double m;
-} CAP;
+} MANGLE_CAP;
 
 typedef struct {
     SINT polyid;
     SINT pixel;
     SINT ncap;
-    CAP *cap;
+    MANGLE_CAP *cap;
     double weight;
     double area;
-} POLY;
+} MANGLE_POLY;
 
 typedef struct {
     void *data;
@@ -66,7 +66,7 @@ typedef struct {
 
 typedef struct {
     SINT npoly;
-    POLY *poly;
+    MANGLE_POLY *poly;
     SINT pix_res;
     DATA_LIST *pix;             /* pixel-indexed array of linked-lists */
 } PLY;
@@ -78,11 +78,11 @@ enum {
 };
 
 void
-ply_poly_alloc( POLY * p, const SINT polyid, const SINT ncap,
+ply_poly_alloc( MANGLE_POLY * p, const SINT polyid, const SINT ncap,
                 const double weight, const SINT pixel, const double area )
 {
     p->polyid = polyid;
-    p->cap = check_alloc( ncap, sizeof( CAP ) );
+    p->cap = check_alloc( ncap, sizeof( MANGLE_CAP ) );
     p->ncap = ncap;
     p->weight = weight;
     p->pixel = pixel;
@@ -90,7 +90,7 @@ ply_poly_alloc( POLY * p, const SINT polyid, const SINT ncap,
 }
 
 void
-ply_poly_clean( POLY * p )
+ply_poly_clean( MANGLE_POLY * p )
 {
     p->polyid = -1;
     CHECK_CLEAN( p->cap );
@@ -104,7 +104,7 @@ void
 ply_alloc( PLY * ply, SINT npoly )
 {
     if( npoly > 0 ) {
-        ply->poly = check_alloc( npoly, sizeof( POLY ) );
+        ply->poly = check_alloc( npoly, sizeof( MANGLE_POLY ) );
     } else {
         ply->poly = NULL;
     }
@@ -116,7 +116,7 @@ void
 ply_clean( PLY * ply )
 {
     SINT i;
-    POLY *p;
+    MANGLE_POLY *p;
     for( i = 0; i < ply->npoly; i++ ) {
         p = &( ply->poly[i] );
         ply_poly_clean( p );
@@ -174,7 +174,7 @@ ply_read_file_into( PLY * ply, const char const *filename )
     while( sr_readline( sr ) ) {
         int i, polyid, ncap, pixel;
         double weight, area;
-        POLY *p;
+        MANGLE_POLY *p;
 
         if( sr_line_isempty( sr ) )
             continue;
@@ -204,7 +204,7 @@ ply_read_file_into( PLY * ply, const char const *filename )
             p = &ply->poly[ipoly];
             ply_poly_alloc( p, polyid, ncap, weight, pixel, area );
             for( i = 0; i < ncap; i++ ) {
-                CAP *c;
+                MANGLE_CAP *c;
                 c = &p->cap[i];
                 line = sr_readline( sr );
                 check = sscanf( line, "%lf %lf %lf %lf", &c->x[0], &c->x[1], &c->x[2], &c->m );
@@ -232,17 +232,17 @@ ply_read_file( const char const *filename )
     return ply;
 }
 
-/* VEC3: this can be abstracted: a calling code can just use (void *) */
-VEC3 *
+/* this can be abstracted: a calling code can just use (void *) */
+MANGLE_VEC *
 ply_vec_init( void )
 {
-    VEC3 *vec3;
-    vec3 = check_alloc( 1, sizeof( VEC3 ) );
+    MANGLE_VEC *vec3;
+    vec3 = check_alloc( 1, sizeof( MANGLE_VEC ) );
     return vec3;
 }
 
-VEC3 *
-ply_vec_kill( VEC3 * vec3 )
+MANGLE_VEC *
+ply_vec_kill( MANGLE_VEC * vec3 )
 {
     CHECK_CLEAN( vec3 );
     return vec3;
@@ -253,7 +253,7 @@ ply_vec_kill( VEC3 * vec3 )
  * az = azimuthal
  */
 static inline void
-ply_vec_from_polar( VEC3 * vec3, const double az, const double el )
+ply_vec_from_polar( MANGLE_VEC * vec3, const double az, const double el )
 {
     vec3->x[0] = sin( el ) * cos( az );
     vec3->x[1] = sin( el ) * sin( az );
@@ -261,7 +261,7 @@ ply_vec_from_polar( VEC3 * vec3, const double az, const double el )
 }
 
 static inline void
-ply_vec_from_radec_deg( VEC3 * vec3, const double ra, const double dec )
+ply_vec_from_radec_deg( MANGLE_VEC * vec3, const double ra, const double dec )
 {
     double az = PI / 180.0 * ra;
     double el = PI / 180.0 * ( 90.0 - dec );
@@ -269,7 +269,7 @@ ply_vec_from_radec_deg( VEC3 * vec3, const double ra, const double dec )
 }
 
 static inline int
-ply_within_cap( const CAP const *cap, const VEC3 const *vec3 )
+ply_within_cap( const MANGLE_CAP const *cap, const MANGLE_VEC const *vec3 )
 {
     const double *c;
     const double *v;
@@ -288,10 +288,10 @@ ply_within_cap( const CAP const *cap, const VEC3 const *vec3 )
 }
 
 static inline int
-ply_within_poly( const POLY const *p, const VEC3 const *vec3 )
+ply_within_poly( const MANGLE_POLY const *p, const MANGLE_VEC const *vec3 )
 {
     SINT i;
-    CAP *c;
+    MANGLE_CAP *c;
     c = p->cap;
     for( i = 0; i < p->ncap; i++ ) {
         if( !ply_within_cap( &c[i], vec3 ) )
@@ -301,10 +301,10 @@ ply_within_poly( const POLY const *p, const VEC3 const *vec3 )
 }
 
 static inline int
-ply_polyid_first( const PLY const *ply, const VEC3 const *vec3 )
+ply_polyid_first( const PLY const *ply, const MANGLE_VEC const *vec3 )
 {
     SINT i;
-    POLY *p;
+    MANGLE_POLY *p;
 
     for( i = 0; i < ply->npoly; i++ ) {
         p = &( ply->poly[i] );
@@ -342,7 +342,7 @@ ply_pix_init( PLY * ply, int pix_res )
 }
 
 void
-ply_pix_addpoly( PLY * ply, POLY * p )
+ply_pix_addpoly( PLY * ply, MANGLE_POLY * p )
 {
     /* XXX in development */
     if( ply->pix_res < 1 ) {
