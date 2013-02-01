@@ -12,8 +12,8 @@
  * Some description:
  *   The main focus of these utilites:
  *   1. clean c-only code
- *   2. simple use
- *   3. easy to use within larger codes
+ *   2. few dependencies
+ *   3. simple use and easy to utilize within larger codes
  *
  *   There is no attempt to provide complete functionality.
  *   that MANGLE does.  Please use full MANGLE utilties if you need
@@ -59,22 +59,27 @@ typedef struct {
     double area;
 } POLY;
 
-/* this is a linked-list for IDs, intended for pixels  */
 typedef struct {
-    SINT id;
+    void *data;
     void *next;
-} ID_LIST;
+} DATA_LIST;
 
 typedef struct {
     SINT npoly;
     POLY *poly;
-    SINT pix_r;
-    ID_LIST *pix;               /* pixel-indexed array of linked-lists */
+    SINT pix_res;
+    DATA_LIST *pix;             /* pixel-indexed array of linked-lists */
 } PLY;
 
+enum {
+    PLY_PIX_NONE = 0,
+    PLY_PIX_SIMPLE = 1,
+    PLY_PIX_SDSSPIX = 2
+};
+
 void
-ply_poly_init( POLY * p, const SINT polyid, const SINT ncap,
-               const double weight, const SINT pixel, const double area )
+ply_poly_alloc( POLY * p, const SINT polyid, const SINT ncap,
+                const double weight, const SINT pixel, const double area )
 {
     p->polyid = polyid;
     p->cap = check_alloc( ncap, sizeof( CAP ) );
@@ -96,7 +101,7 @@ ply_poly_clean( POLY * p )
 }
 
 void
-ply_init( PLY * ply, SINT npoly )
+ply_alloc( PLY * ply, SINT npoly )
 {
     if( npoly > 0 ) {
         ply->poly = check_alloc( npoly, sizeof( POLY ) );
@@ -104,7 +109,7 @@ ply_init( PLY * ply, SINT npoly )
         ply->poly = NULL;
     }
     ply->npoly = npoly;
-    ply->pix_r = 0;
+    ply->pix_res = 0;
 }
 
 void
@@ -118,20 +123,20 @@ ply_clean( PLY * ply )
     }
     CHECK_CLEAN( ply->poly );
     ply->npoly = 0;
-    ply->pix_r = 0;
+    ply->pix_res = 0;
 }
 
 PLY *
-ply_create( SINT npoly )
+ply_init( SINT npoly )
 {
     PLY *ply;
     ply = check_alloc( 1, sizeof( PLY ) );
-    ply_init( ply, npoly );
+    ply_alloc( ply, npoly );
     return ply;
 }
 
 PLY *
-ply_destroy( PLY * ply )
+ply_kill( PLY * ply )
 {
     ply_clean( ply );
     CHECK_CLEAN( ply );
@@ -139,13 +144,7 @@ ply_destroy( PLY * ply )
 }
 
 void
-ply_pix_init( PLY * ply, SINT pix_r )
-{
-    /* use pix_r to allocate ply->pix array */
-}
-
-void
-ply_file_read( PLY * ply, const char const *filename )
+ply_read_file_into( PLY * ply, const char const *filename )
 {
     /* read in polygon format */
     int check;
@@ -157,7 +156,7 @@ ply_file_read( PLY * ply, const char const *filename )
     ply_clean( ply );
 
     /* read-by-line and process PLY format file */
-    sr = sr_create( filename );
+    sr = sr_init( filename );
 
     /* first line sets up the polygons */
     line = sr_readline( sr );
@@ -169,13 +168,16 @@ ply_file_read( PLY * ply, const char const *filename )
         exit( EXIT_FAILURE );
     }
 
-    ply_init( ply, npoly );
+    ply_alloc( ply, npoly );
 
     ipoly = 0;
     while( sr_readline( sr ) ) {
         int i, polyid, ncap, pixel;
         double weight, area;
         POLY *p;
+
+        if( sr_line_isempty( sr ) )
+            continue;
 
         line = sr_line( sr );
 
@@ -200,7 +202,7 @@ ply_file_read( PLY * ply, const char const *filename )
 
             /* we're starting a valid polygon! */
             p = &ply->poly[ipoly];
-            ply_poly_init( p, polyid, ncap, weight, pixel, area );
+            ply_poly_alloc( p, polyid, ncap, weight, pixel, area );
             for( i = 0; i < ncap; i++ ) {
                 CAP *c;
                 c = &p->cap[i];
@@ -215,24 +217,24 @@ ply_file_read( PLY * ply, const char const *filename )
             }
             ipoly += 1;
         }
-        /* pretty much ignore anything else, but will implement simple pixelization */
+        /* XXX pretty much ignore anything else, but will implement simple pixelization */
     }
 
-    sr_destroy( sr );
+    sr_kill( sr );
 }
 
 PLY *
-ply_from_file( const char const *filename )
+ply_read_file( const char const *filename )
 {
     PLY *ply;
-    ply = ply_create( 0 );
-    ply_file_read( ply, filename );
+    ply = ply_init( 0 );
+    ply_read_file_into( ply, filename );
     return ply;
 }
 
 /* VEC3: this can be abstracted: a calling code can just use (void *) */
 VEC3 *
-ply_vec_create( void )
+ply_vec_init( void )
 {
     VEC3 *vec3;
     vec3 = check_alloc( 1, sizeof( VEC3 ) );
@@ -240,7 +242,7 @@ ply_vec_create( void )
 }
 
 VEC3 *
-ply_vec_destroy( VEC3 * vec3 )
+ply_vec_kill( VEC3 * vec3 )
 {
     CHECK_CLEAN( vec3 );
     return vec3;
@@ -310,6 +312,81 @@ ply_polyid_first( const PLY const *ply, const VEC3 const *vec3 )
             return p->polyid;
     }
     return -1;
+}
+
+/* PIXEL routines: NOT YET TESTED .. STILL IN DEVELOPMENT.  LIKELY BROKEN!! */
+static inline int
+ply_pow2i( const int x )
+{
+    /* as long as x is small, do pow() via bitshift! */
+    return ( 1 << x );
+}
+
+static inline size_t
+ply_pix_count( const int res )
+{
+    size_t npix;
+    if( res < 1 )
+        return 0;
+    npix = ply_pow2i( 2 * res );
+    return npix;
+}
+
+void
+ply_pix_init( PLY * ply, int pix_res )
+{
+    /* use pix_res to allocate ply->pix array */
+    size_t count = ply_pix_count( pix_res );
+    ply->pix = check_alloc( count, sizeof( DATA_LIST ) );
+    ply->pix_res = pix_res;
+}
+
+void
+ply_pix_addpoly( PLY * ply, POLY * p )
+{
+    /* XXX in development */
+    if( ply->pix_res < 1 ) {
+        fprintf( stderr,
+                 "Error: Tried to add pixel without proper initializing PIXEL structure!\n" );
+    }
+    // XXX check POLYID matches the implied resolution!
+}
+
+/* next several routines modeled after code in which_pixel.c in original mangle code */
+static inline int
+ply_pix_id_start( PLY const *const ply )
+{
+    int pix_id;
+    SINT res;
+
+    res = ply->pix_res;
+    pix_id = ( ply_pow2i( 2 * res ) - 1 ) / 3;
+    return pix_id;
+}
+
+static inline int
+ply_pix_which_store( PLY const *const ply, const double az, const double el )
+{
+    int n, m, base_pix;
+    SINT pow2r;
+
+    pow2r = ply_pow2i( ply->pix_res );
+
+    if( fabs( sin( el ) - 1.0 ) < 1e-10 ) {
+        n = 0;
+    } else {
+        n = ceil( ( 1.0 - sin( el ) ) / 2.0 * pow2r ) - 1;
+    }
+    m = floor( az / 2.0 / PI );
+    base_pix = ( n + m ) * pow2r;
+
+    return base_pix;
+}
+
+static inline int
+ply_pix_which_id( PLY const *const ply, const double az, const double el )
+{
+    return ply_pix_which_store( ply, az, el ) + ply_pix_id_start( ply );
 }
 
 #endif
