@@ -14,12 +14,15 @@ default: mypolyid
 mypolyid: mypolyid.c 
 	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
 
+trim_to_ply: trim_to_ply.c 
+	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
+
 indent:
-	gnuindent src/*.c lib/*.c lib/*.h
+	gnuindent *.c
 
 clean:
-	rm -f *.o src/*.o lib/*.o mypolyid
+	rm -f *.o mypolyid trim_to_ply
 
 bak-clean:
-	rm -f *.bak *~ src/*~ lib/*~
+	rm -f *.bak *~ 
 
