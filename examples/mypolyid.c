@@ -21,7 +21,8 @@ main( int argc, char **argv )
 
     while( sr_readline( sr ) ) {
         char *line;
-        int check, polyid;
+        int check;
+        MANGLE_INT polyid;
         double ra, dec;
 
         line = sr_line( sr );
@@ -39,9 +40,9 @@ main( int argc, char **argv )
         }
 
         ply_vec_from_radec_deg( vec, ra, dec );
-        polyid = ply_polyid_first( ply, vec );
+        polyid = ply_find_polyid( ply, vec );
 
-        fprintf( stdout, "%8d %s\n", polyid, line );
+        fprintf( stdout, "%6zd %s\n", ( ssize_t ) polyid, line );
     }
 
     vec = ply_vec_kill( vec );
