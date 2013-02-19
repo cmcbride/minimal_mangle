@@ -7,7 +7,7 @@
 int
 main( int argc, char **argv )
 {
-    PLY *ply;
+    MANGLE_PLY *ply;
     simple_reader *sr;
     void *vec;
 
@@ -15,9 +15,9 @@ main( int argc, char **argv )
         printf( "Usage: %s  POLYGON  RA_DEC_FILE\n", argv[0] );
         return EXIT_FAILURE;
     }
-    ply = ply_read_file( argv[1] );
+    ply = mply_read_file( argv[1] );
     sr = sr_init( argv[2] );
-    vec = ply_vec_init(  );
+    vec = mply_vec_init(  );
 
     while( sr_readline( sr ) ) {
         char *line;
@@ -39,14 +39,14 @@ main( int argc, char **argv )
             continue;
         }
 
-        ply_vec_from_radec_deg( vec, ra, dec );
-        polyid = ply_find_polyid( ply, vec );
+        mply_vec_from_radec_deg( vec, ra, dec );
+        polyid = mply_find_polyid( ply, vec );
 
         fprintf( stdout, "%6zd %s\n", ( ssize_t ) polyid, line );
     }
 
-    vec = ply_vec_kill( vec );
-    ply = ply_kill( ply );
+    vec = mply_vec_kill( vec );
+    ply = mply_kill( ply );
     sr = sr_kill( sr );
 
     return EXIT_SUCCESS;
