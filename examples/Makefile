@@ -17,11 +17,14 @@ mypolyid: mypolyid.c
 trim_to_ply: trim_to_ply.c 
 	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
 
+pix_polycount: pix_polycount.c 
+	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
+
 indent:
 	gnuindent *.c
 
 clean:
-	rm -f *.o mypolyid trim_to_ply
+	rm -f *.o mypolyid trim_to_ply pix_polycount
 
 bak-clean:
 	rm -f *.bak *~ 

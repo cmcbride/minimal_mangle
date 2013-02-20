@@ -9,7 +9,6 @@ main( int argc, char **argv )
 {
     MANGLE_PLY *ply;
     simple_reader *sr;
-    void *vec;
 
     if( argc < 3 ) {
         printf( "Usage: %s  POLYGON  RA_DEC_FILE\n", argv[0] );
@@ -17,12 +16,12 @@ main( int argc, char **argv )
     }
     ply = mply_read_file( argv[1] );
     sr = sr_init( argv[2] );
-    vec = mply_vec_init(  );
 
     while( sr_readline( sr ) ) {
         char *line;
         int check;
-        MANGLE_INT polyid;
+        MANGLE_INT ipoly;       /* this is an internal index */
+        MANGLE_INT polyid;      /* listed POLYID */
         double ra, dec;
 
         line = sr_line( sr );
@@ -39,13 +38,12 @@ main( int argc, char **argv )
             continue;
         }
 
-        mply_vec_from_radec_deg( vec, ra, dec );
-        polyid = mply_find_polyid( ply, vec );
+        ipoly = mply_find_polyindex_radec( ply, ra, dec );
+        polyid = mply_polyid_from_index( ply, ipoly );
 
         fprintf( stdout, "%6zd %s\n", ( ssize_t ) polyid, line );
     }
 
-    vec = mply_vec_kill( vec );
     ply = mply_kill( ply );
     sr = sr_kill( sr );
 
