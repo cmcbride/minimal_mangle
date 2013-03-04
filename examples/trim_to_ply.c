@@ -11,10 +11,10 @@ main( int argc, char **argv )
     MANGLE_PLY *ply;
     simple_reader *sr;
 
-    double weight_lim = 0.0;
+    double min_weight = 0.0;
 
     if( argc < 3 ) {
-        printf( "Usage: %s  POLYGON  RA_DEC_FILE  [WEIGHT_LIMIT]\n", argv[0] );
+        printf( "Usage: %s  POLYGON  RA_DEC_FILE  [MIN_WEIGHT]\n", argv[0] );
         return EXIT_FAILURE;
     }
 
@@ -22,10 +22,10 @@ main( int argc, char **argv )
     ply = mply_read_file( argv[1] );
 
     if( argc > 3 ) {
-        weight_lim = strtod( argv[3], NULL );
+        min_weight = strtod( argv[3], NULL );
     }
 
-    fprintf( stderr, "Filtering: weight > %g\n", weight_lim );
+    fprintf( stderr, "Filtering: weight >= %g\n", min_weight );
 
     sr = sr_init( argv[2] );    /* simple line-by-line reader */
     while( sr_readline( sr ) ) {
@@ -54,7 +54,7 @@ main( int argc, char **argv )
             continue;
 
         weight = mply_weight_from_index( ply, index );
-        if( weight >= weight_lim )
+        if( weight < min_weight )
             continue;
 
         fprintf( stdout, "%s\n", line );
