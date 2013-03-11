@@ -4,6 +4,11 @@
 #include <minimal_mangle.c>
 #include <simple_reader.c>
 
+#ifndef TRUE
+#define TRUE  1
+#define FALSE 0
+#endif
+
 int
 main( int argc, char **argv )
 {
@@ -11,23 +16,42 @@ main( int argc, char **argv )
     MANGLE_PLY *ply;
     simple_reader *sr;
 
+    int reverse_trim = FALSE;
     double min_weight = 0.0;
+    size_t nread = 0, nkeep = 0;
 
     if( argc < 3 ) {
-        printf( "Usage: %s  POLYGON  RA_DEC_FILE  [MIN_WEIGHT]\n", argv[0] );
+        printf( "Usage: %s  RA_DEC_FILE POLYGON  [MIN_WEIGHT]  [REVERSE_TRIM]  >  OUT\n", argv[0] );
         return EXIT_FAILURE;
     }
 
-    fprintf( stderr, "Reading polygon file: %s\n", argv[1] );
-    ply = mply_read_file( argv[1] );
+    fprintf( stderr, "READING polygon file: %s\n", argv[2] );
+    ply = mply_read_file( argv[2] );
 
     if( argc > 3 ) {
         min_weight = strtod( argv[3], NULL );
     }
+    if( argc > 4 ) {
+        char c, *s;
+        s = argv[4];
+        c = s[0];
 
-    fprintf( stderr, "Filtering: weight >= %g\n", min_weight );
+        /* start with it's numeric value */
+        sscanf( s, "%d", &reverse_trim );
 
-    sr = sr_init( argv[2] );    /* simple line-by-line reader */
+        if( c == 'y' || c == 'Y' || c == 't' || c == 'T' )
+            reverse_trim = TRUE;
+        else if( strncasecmp( "on", s, 2 ) == 0 )
+            reverse_trim = TRUE;
+    }
+
+    if( reverse_trim )
+        fprintf( stderr, "FILTERING: vetoing weight >= %g (REVERSED!)\n", min_weight );
+    else
+        fprintf( stderr, "FILTERING: keeping weight >= %g\n", min_weight );
+
+    sr = sr_init( argv[1] );    /* simple line-by-line reader */
+    fprintf( stderr, "PROCESSING: ra dec from %s\n", sr_filename( sr ) );
     while( sr_readline( sr ) ) {
         char *line;
         int check;
@@ -48,20 +72,36 @@ main( int argc, char **argv )
             continue;
         }
 
+        nread += 1;
+
         index = mply_find_polyindex_radec( ply, ra, dec );
 
         if( index < 0 )
-            continue;
+            weight = 0.0;
+        else
+            weight = mply_weight_from_index( ply, index );
 
-        weight = mply_weight_from_index( ply, index );
-        if( weight < min_weight )
-            continue;
+        {
+            int skip = FALSE;
 
+            if( weight < min_weight )
+                skip = TRUE;
+
+            if( reverse_trim )
+                skip = skip ? FALSE : TRUE;
+
+            if( skip )
+                continue;
+        }
+
+        nkeep += 1;
         fprintf( stdout, "%s\n", line );
     }
 
     ply = mply_kill( ply );
     sr = sr_kill( sr );
+
+    fprintf( stderr, "DONE: %zu -> %zu\n", nread, nkeep );
 
     return EXIT_SUCCESS;
 }
