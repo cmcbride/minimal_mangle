@@ -7,26 +7,29 @@ CLINK= -lm
 
 # CFLAGS= -g -O0 -Wall -I./lib -lm
 
-default: mm_polyid pix_polycount ply_area trim_by_ply
+default: mply_area mply_pix_polycount mply_polyid mply_trim
 
-mm_polyid: mm_polyid.c
+mply_area: mply_area.c
 	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
 
-pix_polycount: pix_polycount.c
+mply_pix_polycount: mply_pix_polycount.c
 	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
 
-ply_area: ply_area.c
+mply_polyid: mply_polyid.c
 	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
 
-trim_by_ply: trim_by_ply.c
+mply_trim: mply_trim.c
 	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
 
 indent:
 	gnuindent *.c
 
 clean:
-	rm -f *.o mm_polyid pix_polycount ply_area trim_by_ply
+	rm -f *.o
 
-bak-clean:
+bu-clean: clean
 	rm -f *.bak *~
+
+real-clean: clean
+	rm -f mply_area mply_pix_polycount mply_polyid mply_trim
 
