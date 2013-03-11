@@ -30,7 +30,7 @@ main( int argc, char **argv )
     area = mply_area_total( ply, min_weight );
     fprintf( stdout, "Total area: \n  str:   %g\n  deg^2: %g \n", area, area * str2sdeg );
     warea = mply_area_weighted_total( ply, min_weight );
-    fprintf( stdout, "Effective area: \n  str:   %g\n  deg^2: %g \n", warea, warea * str2sdeg );
+    fprintf( stdout, "Weighted area: \n  str:   %g\n  deg^2: %g \n", warea, warea * str2sdeg );
 
     ply = mply_kill( ply );
 
