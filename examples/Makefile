@@ -7,9 +7,9 @@ CLINK= -lm
 
 # CFLAGS= -g -O0 -Wall -I./lib -lm
 
-default: mypolyid pix_polycount ply_area trim_by_ply
+default: mm_polyid pix_polycount ply_area trim_by_ply
 
-mypolyid: mypolyid.c
+mm_polyid: mm_polyid.c
 	$(CC) $(CFLAGS) -o $@ $^ $(CLINK)
 
 pix_polycount: pix_polycount.c
@@ -25,7 +25,7 @@ indent:
 	gnuindent *.c
 
 clean:
-	rm -f *.o mypolyid pix_polycount ply_area trim_by_ply
+	rm -f *.o mm_polyid pix_polycount ply_area trim_by_ply
 
 bak-clean:
 	rm -f *.bak *~
