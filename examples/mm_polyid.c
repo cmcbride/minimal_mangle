@@ -26,9 +26,9 @@ main( int argc, char **argv )
 
         line = sr_line( sr );
 
-        if( '#' == line[0] )
+        if( sr_line_isempty( sr ) )
             continue;
-        if( '\0' == line[0] )
+        if( '#' == line[0] )
             continue;
 
         check = sscanf( line, "%lf %lf", &ra, &dec );
