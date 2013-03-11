@@ -21,7 +21,8 @@ main( int argc, char **argv )
     size_t nread = 0, nkeep = 0;
 
     if( argc < 3 ) {
-        printf( "Usage: %s  RA_DEC_FILE POLYGON  [MIN_WEIGHT]  [REVERSE_TRIM]  >  OUT\n", argv[0] );
+        printf( "Usage: %s  RA_DEC_FILE POLYGON  [MIN_WEIGHT]  [REVERSE_TRIM]  >  OUTPUT\n",
+                argv[0] );
         return EXIT_FAILURE;
     }
 

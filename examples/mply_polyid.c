@@ -11,7 +11,7 @@ main( int argc, char **argv )
     simple_reader *sr;
 
     if( argc < 3 ) {
-        printf( "Usage: %s  POLYGON  RA_DEC_FILE\n", argv[0] );
+        printf( "Usage: %s  POLYGON  RA_DEC_FILE > OUTPUT \n", argv[0] );
         return EXIT_FAILURE;
     }
     ply = mply_read_file( argv[1] );
