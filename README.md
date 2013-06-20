@@ -5,13 +5,13 @@ Simplified C-only code utilities to minimally use mangle polygons.
 The intention is to work like the original MANGLE code:
 http://space.mit.edu/~molly/mangle/
 
-The main focus of these utilites:
+The main focus of these utilities:
  1. clean c-only code without globals.
  2. few to no dependencies.
  3. simple to use and utilize within larger codes.
 
 There is no attempt to provide the complete functionality that MANGLE
-does, nor have flexible input.  Please use the full MANGLE utilties if
+does, nor have flexible input.  Please use the full MANGLE utilities if
 you need to convert to an accepted polygon format that this code can
 handle.
 
@@ -42,6 +42,15 @@ then pass the current directory to the compiler.  For example:
 For some examples codes, and some functioning tools, please see the
 examples/ subdirectory.
 
+If you want to build a library file or language bindings, you might find
+it useful to disable the inlining keywords.  Basically, define the
+NO_INLINE keyword, for example:
+
+    % gcc -DNO_INLINE ..
+
+Besides an intelligent compiler potentially doing inlining for you, this
+should disable all inlining.
+
 
 DEPENDENCIES
 ------------
@@ -63,12 +72,14 @@ Some terminology, which is used internally and within function names:
 
  "INDEX" : the internal storage index (unique identifiers in code)
 
+This code has not yet been optimized in any significant fashion.
+
 
 TODO
 ----
 The basic functionality required was to read in a mangle mask and
 efficiently search if a set of points exist within that mask. However,
-a number of useful extesions could be easily added. The list is broken
+a number of useful extensions could be easily added. The list is broken
 into two parts, library functions and utility codes.
 
 ### Library:

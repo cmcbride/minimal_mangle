@@ -8,6 +8,24 @@
 #ifndef MINIMAL_MANGLE_INCLUDED
 #define MINIMAL_MANGLE_INCLUDED
 
+/* This should control if any functions get inlined, and how.
+ * Inlining can speed up C-level code loops, but might prevent
+ * use in shared-library creation or bindings.
+ */
+#ifndef INLINE_CMD
+#define INLINE_CMD static inline
+#endif
+
+/* Ideally there should be two levels of inlining.  Internal functions
+ * could be inlined with external functions left as real function calls.
+ * This is *not* currently implemented.
+ */
+#ifdef NO_INLINE
+#define INLINE
+#else
+#define INLINE INLINE_CMD
+#endif
+
 /*
  * Some description:
  *   The main focus of these utilites:
@@ -93,7 +111,7 @@ mply_pow2i( const int x )
     return ( 1 << x );
 }
 
-static inline size_t
+INLINE size_t
 mply_pix_count( const int res )
 {
     size_t npix;
@@ -146,7 +164,7 @@ mply_pix_clean( MANGLE_PLY * const ply )
 
 /* next several routines modeled after code in which_pixel.c in original mangle code */
 /* Given pixel resolution, what is the ID of the starting pixel? */
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_pix_id_start( MANGLE_PLY const *const ply )
 {
     int pix_id;
@@ -160,7 +178,7 @@ mply_pix_id_start( MANGLE_PLY const *const ply )
 /* INDEX refers to the internal storage index, which is in pixel order but
  * zero-indexed rather than numbered according to resolution as the
  * "simple pixelization" scheme in MANGLE does */
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_pix_which_index( MANGLE_PLY const *const ply, const double az, double el )
 {
     int n, m;
@@ -180,13 +198,13 @@ mply_pix_which_index( MANGLE_PLY const *const ply, const double az, double el )
     return base_pix;
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_pix_which_id( MANGLE_PLY const *const ply, const double az, const double el )
 {
     return mply_pix_which_index( ply, az, el ) + mply_pix_id_start( ply );
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_pix_index_from_id( MANGLE_PLY const *const ply, MANGLE_INT id )
 {
     MANGLE_INT index;
@@ -202,7 +220,7 @@ mply_pix_index_from_id( MANGLE_PLY const *const ply, MANGLE_INT id )
     return index;
 }
 
-static inline size_t
+INLINE size_t
 mply_pix_npoly( MANGLE_PLY const *const ply, MANGLE_INT ipix )
 {
     size_t count = 0;
@@ -460,7 +478,7 @@ mply_vec_kill( MANGLE_VEC * vec3 )
  * el = elevation / polar
  * az = azimuthal
  */
-static inline void
+INLINE void
 mply_vec_from_polar( MANGLE_VEC * vec3, const double az, const double el )
 {
     /* simplified mapping to match MANGLE internals */
@@ -469,14 +487,14 @@ mply_vec_from_polar( MANGLE_VEC * vec3, const double az, const double el )
     vec3->x[2] = sin( el );
 }
 
-static inline void
+INLINE void
 mply_vec_from_radec( MANGLE_VEC * vec3, const double ra, const double dec )
 {
     /* simplified mapping to match MANGLE internals */
     mply_vec_from_polar( vec3, ra * DEG2RAD, dec * DEG2RAD );
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_within_cap( MANGLE_CAP const *const cap, MANGLE_VEC const *const vec3 )
 {
     const double *c;
@@ -495,7 +513,7 @@ mply_within_cap( MANGLE_CAP const *const cap, MANGLE_VEC const *const vec3 )
     return FALSE;
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_within_poly( MANGLE_POLY const *const p, MANGLE_VEC const *const vec3 )
 {
     MANGLE_INT i;
@@ -509,7 +527,7 @@ mply_within_poly( MANGLE_POLY const *const p, MANGLE_VEC const *const vec3 )
 }
 
 /* short circuit: finds FIRST matching polygon and does not continue checking! */
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_find_polyindex_vec( MANGLE_PLY const *const ply, MANGLE_VEC const *const vec3 )
 {
     MANGLE_INT i;
@@ -537,7 +555,7 @@ mply_find_polyindex_vec( MANGLE_PLY const *const ply, MANGLE_VEC const *const ve
  * 1. it requires more memory (pix list and all linked-lists elements
  * 2. iterates over linked-list, so more random access memory
  */
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_find_polyindex_pix( MANGLE_PLY const *const ply, const double az, const double el )
 {
     MANGLE_INT ipix;
@@ -560,7 +578,7 @@ mply_find_polyindex_pix( MANGLE_PLY const *const ply, const double az, const dou
     return -1;
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_find_polyindex_polar( MANGLE_PLY const *const ply, const double az, const double el )
 {
     MANGLE_INT i = -1;
@@ -576,7 +594,7 @@ mply_find_polyindex_polar( MANGLE_PLY const *const ply, const double az, const d
     return i;
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_find_polyindex_radec( MANGLE_PLY const *const ply, const double ra, const double dec )
 {
     return mply_find_polyindex_polar( ply, ra * DEG2RAD, dec * DEG2RAD );
@@ -593,7 +611,7 @@ mply_poly_from_index( MANGLE_PLY const *const ply, const MANGLE_INT index )
     return &( ply->poly[index] );
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_polyid_from_index( MANGLE_PLY const *const ply, const MANGLE_INT index )
 {
     MANGLE_POLY *p;
@@ -604,7 +622,7 @@ mply_polyid_from_index( MANGLE_PLY const *const ply, const MANGLE_INT index )
     return p->polyid;
 }
 
-static inline double
+INLINE double
 mply_weight_from_index( MANGLE_PLY const *const ply, const MANGLE_INT index )
 {
     MANGLE_POLY *p;
@@ -615,7 +633,7 @@ mply_weight_from_index( MANGLE_PLY const *const ply, const MANGLE_INT index )
     return p->weight;
 }
 
-static inline double
+INLINE double
 mply_area_from_index( MANGLE_PLY const *const ply, const MANGLE_INT index )
 {
     MANGLE_POLY *p;
@@ -626,7 +644,7 @@ mply_area_from_index( MANGLE_PLY const *const ply, const MANGLE_INT index )
     return p->area;
 }
 
-static inline double
+INLINE double
 mply_area_total( MANGLE_PLY const *const ply, const double min_weight )
 {
     MANGLE_INT i;
@@ -639,7 +657,7 @@ mply_area_total( MANGLE_PLY const *const ply, const double min_weight )
     return area;
 }
 
-static inline double
+INLINE double
 mply_area_weighted_total( MANGLE_PLY const *const ply, const double min_weight )
 {
     MANGLE_INT i;
@@ -652,7 +670,7 @@ mply_area_weighted_total( MANGLE_PLY const *const ply, const double min_weight )
     return wa;
 }
 
-static inline MANGLE_INT
+INLINE MANGLE_INT
 mply_find_polyid( MANGLE_PLY const *const ply, MANGLE_VEC const *const vec3 )
 {
     MANGLE_INT index = mply_find_polyindex_vec( ply, vec3 );
